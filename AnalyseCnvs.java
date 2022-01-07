@@ -23,20 +23,16 @@ public class AnalyseCnvs
 
 	public static void main(String[] args) throws Exception {
 		BufferedReader in = new BufferedReader("-".equals(args[0]) ? new InputStreamReader(System.in) : new FileReader(args[0]));
-		boolean verbose = false;
 		boolean decon = false;
 		boolean cnvkit = false;
 		boolean excavator2 = false;
 		boolean copywriter = false;
 		boolean joint = false;
-		String samplesFile = null;
 		String truthFile = "truth_set.csv";
 		String commonFile = "common_cnvs";
-		List<Integer> optimiseColumns = null;
+		List<Integer> optimiseColumns = new ArrayList<Integer>();
 		for (int i = 1; i < args.length; i++) {
-			if ("-v".equals(args[i])) {
-				verbose = true;
-			} else if ("-decon".equals(args[i])) {
+			if ("-decon".equals(args[i])) {
 				decon = true;
 			} else if ("-cnvkit".equals(args[i])) {
 				cnvkit = true;
@@ -49,17 +45,9 @@ public class AnalyseCnvs
 			} else if ("-truth".equals(args[i])) {
 				i++;
 				truthFile = args[i];
-			} else if ("-samples".equals(args[i])) {
-				i++;
-				samplesFile = args[i];
 			} else if ("-optimise".equals(args[i])) {
-				if (optimiseColumns == null) {
-					optimiseColumns = new ArrayList<Integer>();
-				}
 				i++;
 				optimiseColumns.add(Integer.parseInt(args[i]) - 1);
-			} else if ("-nooptimise".equals(args[i])) {
-				optimiseColumns = new ArrayList<Integer>();
 			}
 		}
 		Map<String, List<Call>> calls = new HashMap<String, List<Call>>();
@@ -89,7 +77,7 @@ public class AnalyseCnvs
 				String chromosome = split[1];
 				int start = Integer.parseInt(split[2]);
 				int end = Integer.parseInt(split[3]);
-				String dupDel = (Double.parseDouble(split[(excavator2 ? 4 : 5)]) > 0.0 ? "Duplication" : "Deletion");
+				String dupDel = copywriter ? split[4] : (Double.parseDouble(split[(excavator2 ? 4 : 5)]) > 0.0 ? "Duplication" : "Deletion");
 				call = new Call(chromosome, start, end, dupDel, line);
 			} else {
 				if (joint) {
@@ -137,132 +125,9 @@ public class AnalyseCnvs
 			}
 			line = in.readLine();
 		}
-		if ((samplesFile != null) || (optimiseColumns != null)) {
-			Map<String, List<Call>> trueCalls = new HashMap<String, List<Call>>();
-			in = new BufferedReader(new FileReader(truthFile));
-			line = in.readLine();
-			while (line != null) {
-				String[] split = TAB.split(line);
-				if ("Normal".equals(split[4]) || "ExonCNV".equals(split[4])) {
-					String sampleName = split[0];
-					String chr = split[7];
-					int start = Integer.parseInt(split[8]);
-					int end = Integer.parseInt(split[9]);
-					String dupDel = split[5];
-					List<Call> trueSampleCalls = trueCalls.get(sampleName);
-					if (trueSampleCalls == null) {
-						trueSampleCalls = new ArrayList<Call>();
-						trueCalls.put(sampleName, trueSampleCalls);
-					}
-					trueSampleCalls.add(new Call(chr, start, end, dupDel, line));
-				}
-				line = in.readLine();
-			}
-			in.close();
-			in = new BufferedReader(new FileReader(commonFile));
-			line = in.readLine();
-			List<Call> commonCalls = new ArrayList<Call>();
-			while (line != null) {
-				String[] split = TAB.split(line);
-				commonCalls.add(new Call(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), "", line));
-				line = in.readLine();
-			}
-			in.close();
-			if (samplesFile != null) {
-				in = new BufferedReader(new FileReader(samplesFile));
-				line = in.readLine();
-				while (line != null) {
-					String[] split = TAB.split(line);
-					String sampleName = split[1];
-					List<Call> sampleCalls = calls.get(sampleName);
-					if (sampleCalls != null) {
-						List<Call> trueSampleCalls = trueCalls.get(sampleName);
-						if (trueSampleCalls == null) {
-							trueSampleCalls = new ArrayList<Call>();
-						}
-						for (Call call : sampleCalls) {
-							boolean overlaps = false;
-							for (Call trueCall : trueSampleCalls) {
-								if (call.overlaps(trueCall)) {
-									overlaps = true;
-								}
-							}
-							for (Call commonCall : commonCalls) {
-								if (call.overlaps(commonCall)) {
-									overlaps = true;
-								}
-							}
-							if (!overlaps) {
-								System.out.println(sampleName + "\t" + call + "\t" + call.getLength());
-							}
-						}
-					}
-					line = in.readLine();
-				}
-			} else {
-				List<Call> fp = new ArrayList<Call>();
-				Map<Call, Set<Call>> tp = new HashMap<Call, Set<Call>>();
-				for (String sampleName : calls.keySet()) {
-					List<Call> sampleCalls = calls.get(sampleName);
-					List<Call> trueSampleCalls = trueCalls.get(sampleName);
-					if (trueSampleCalls == null) {
-						trueSampleCalls = new ArrayList<Call>();
-					}
-					for (Call call : sampleCalls) {
-						boolean common = false;
-						for (Call commonCall : commonCalls) {
-							if (call.containedIn(commonCall)) {
-								common = true;
-							}
-						}
-						boolean overlaps = false;
-						Set<Call> truths = new HashSet<Call>();
-						for (Call trueCall : trueSampleCalls) {
-							if (call.overlaps(trueCall)) {
-								overlaps = true;
-								truths.add(trueCall);
-								if (verbose) {
-									System.out.println(trueCall.getLine() + "\ttrue\t" + call.getLine());
-								}
-							}
-						}
-						if (overlaps) {
-							tp.put(call, truths);
-						} else if (!common) {
-							fp.add(call);
-						}
-					}
-				}
-				Set<Call> truths = new HashSet<Call>();
-				for (Set<Call> callTruths : tp.values()) {
-					truths.addAll(callTruths);
-				}
-				int[] bestFp = new int[truths.size() + 1];
-				for (int i = 0; i < bestFp.length; i++) {
-					bestFp[i] = Integer.MAX_VALUE;
-				}
-				if (optimiseColumns.isEmpty()) {
-					System.out.println(truths.size() + "\t" + fp.size());
-				} else {
-					double[][] bestParams = new double[truths.size() + 1][optimiseColumns.size()];
-					optimise(tp, fp, new ArrayList<Double>(), bestFp, bestParams);
-					for (int i = 1; i < bestFp.length; i++) {
-						System.out.print(i + "\t" + bestFp[i]);
-						for (int o = 0; o < bestParams[i].length; o++) {
-							System.out.print("\t" + bestParams[i][o]);
-						}
-						System.out.println("");
-					}
-				}
-			}
-			System.exit(0);
-		}
+		Map<String, List<Call>> trueCalls = new HashMap<String, List<Call>>();
 		in = new BufferedReader(new FileReader(truthFile));
 		line = in.readLine();
-		int truePos = 0;
-		int trueNeg = 0;
-		int falsePos = 0;
-		int falseNeg = 0;
 		while (line != null) {
 			String[] split = TAB.split(line);
 			if ("Normal".equals(split[4]) || "ExonCNV".equals(split[4])) {
@@ -271,37 +136,76 @@ public class AnalyseCnvs
 				int start = Integer.parseInt(split[8]);
 				int end = Integer.parseInt(split[9]);
 				String dupDel = split[5];
-				List<Call> sampleCalls = calls.get(sampleName);
-				if (sampleCalls == null) {
-					sampleCalls = new ArrayList<Call>();
-					calls.put(sampleName, sampleCalls);
+				List<Call> trueSampleCalls = trueCalls.get(sampleName);
+				if (trueSampleCalls == null) {
+					trueSampleCalls = new ArrayList<Call>();
+					trueCalls.put(sampleName, trueSampleCalls);
 				}
-				boolean positive = false;
-				Call positiveCall = null;
-				for (Call call : sampleCalls) {
-					if (call.overlaps(chr, start, end, dupDel)) {
-						positive = true;
-						positiveCall = call;
-					}
-				}
-				if (verbose) {
-					System.out.println(line + "\t" + positive + (positiveCall == null ? "" : "\t" + positiveCall.getLine()));
-				}
-				if (positive) {
-					if ("ExonCNV".equals(split[4])) {
-						truePos++;
-					} else {
-						falsePos++;
-					}
-				} else if ("ExonCNV".equals(split[4])) {
-					falseNeg++;
-				} else {
-					trueNeg++;
-				}
+				trueSampleCalls.add(new Call(chr, start, end, dupDel, line));
 			}
 			line = in.readLine();
 		}
-		System.out.println(truePos + "\t" + falsePos + "\t" + trueNeg + "\t" + falseNeg + "\t" + ((truePos * 100.0) / (truePos + falseNeg)) + "\t" + ((trueNeg * 100.0) / (trueNeg + falsePos)));
+		in.close();
+		in = new BufferedReader(new FileReader(commonFile));
+		line = in.readLine();
+		List<Call> commonCalls = new ArrayList<Call>();
+		while (line != null) {
+			String[] split = TAB.split(line);
+			commonCalls.add(new Call(split[0], Integer.parseInt(split[1]), Integer.parseInt(split[2]), "", line));
+			line = in.readLine();
+		}
+		in.close();
+		List<Call> fp = new ArrayList<Call>();
+		Map<Call, Set<Call>> tp = new HashMap<Call, Set<Call>>();
+		for (String sampleName : calls.keySet()) {
+			List<Call> sampleCalls = calls.get(sampleName);
+			List<Call> trueSampleCalls = trueCalls.get(sampleName);
+			if (trueSampleCalls == null) {
+				trueSampleCalls = new ArrayList<Call>();
+			}
+			for (Call call : sampleCalls) {
+				boolean common = false;
+				for (Call commonCall : commonCalls) {
+					if (call.containedIn(commonCall)) {
+						common = true;
+					}
+				}
+				boolean overlaps = false;
+				Set<Call> truths = new HashSet<Call>();
+				for (Call trueCall : trueSampleCalls) {
+					if (call.overlaps(trueCall)) {
+						overlaps = true;
+						truths.add(trueCall);
+					}
+				}
+				if (overlaps) {
+					tp.put(call, truths);
+				} else if (!common) {
+					fp.add(call);
+				}
+			}
+		}
+		Set<Call> truths = new HashSet<Call>();
+		for (Set<Call> callTruths : tp.values()) {
+			truths.addAll(callTruths);
+		}
+		if (optimiseColumns.isEmpty()) {
+			System.out.println(truths.size() + "\t" + fp.size());
+		} else {
+			int[] bestFp = new int[truths.size() + 1];
+			for (int i = 0; i < bestFp.length; i++) {
+				bestFp[i] = Integer.MAX_VALUE;
+			}
+			double[][] bestParams = new double[truths.size() + 1][optimiseColumns.size()];
+			optimise(tp, fp, new ArrayList<Double>(), bestFp, bestParams);
+			for (int i = 1; i < bestFp.length; i++) {
+				System.out.print(i + "\t" + bestFp[i]);
+				for (int o = 0; o < bestParams[i].length; o++) {
+					System.out.print("\t" + bestParams[i][o]);
+				}
+				System.out.println("");
+			}
+		}
 	}
 
 	public static class Call
