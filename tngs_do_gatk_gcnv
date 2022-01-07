@@ -1,0 +1,68 @@
+#!/bin/bash
+
+PANEL=$1
+GENDER=$2
+BIN=$3
+LIMIT=$4
+
+module load Anaconda3/5.2.0
+source activate gatk
+
+if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT ; then
+	mkdir gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT
+	cp savvycnv_intervals/intervals_${PANEL}_${GENDER}_${BIN}_$LIMIT gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/intervals.bed
+fi
+
+REFRESH=0
+for i in $PANEL/$GENDER/*.bam ; do
+	o=`echo $i | sed -e "s/\.bam$//;s/^.*\///"`
+	if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/${o}.hdf5 ; then
+		while test `jobs | wc -l` -ge 16 ; do
+			sleep 6
+		done
+		../gatk-4.0.11.0/gatk CollectReadCounts -I $i -L gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/intervals.bed --interval-merging-rule OVERLAPPING_ONLY -O gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/${o}.hdf5 >gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/${o}.log 2>&1 &
+		REFRESH=1
+	fi
+done
+wait
+
+if test $REFRESH -eq 1 ; then
+	rm gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/hdf5_files.list
+fi
+
+if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/hdf5_files.list ; then
+	ls -1 gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/*.hdf5 >gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/hdf5_files.list
+	rm -R gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls
+fi
+
+SAMPLES=`wc -l <gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/hdf5_files.list`
+PARTITIONS=`expr \( $SAMPLES + 49 \) / 50`
+if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls ; then
+	mkdir gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls
+	i=0
+	LASTSOFAR=0
+	for PARTITION in `seq -w $PARTITIONS` ; do
+		i=`expr $i + $SAMPLES`
+		SOFAR=`expr $i / $PARTITIONS`
+		NUM=`expr $SOFAR - $LASTSOFAR`
+		head -n $SOFAR <gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/hdf5_files.list | tail -n $NUM >gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/hdf5_files_${PARTITION}.list
+		LASTSOFAR=$SOFAR
+	done
+fi
+
+for PARTITION in `seq -w $PARTITIONS` ; do
+	if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/ploidy_model_${PARTITION}-calls ; then
+		while test `jobs | wc -l` -ge 8 ; do
+			sleep 60
+		done
+		../gatk-4.0.11.0/gatk DetermineGermlineContigPloidy -I gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/hdf5_files_${PARTITION}.list --contig-ploidy-priors gatk_gcnv/${GENDER}_priors.tsv --output gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls --output-prefix ploidy_model_$PARTITION >gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/DetermineGermlineContigPloidy_${PARTITION}.log 2>&1 &
+		rm -R gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/cnv_calls_${PARTITION}-*
+	fi
+done
+wait
+
+for PARTITION in `seq -w $PARTITIONS` ; do
+	if ! test -e gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/cnv_calls_${PARTITION}-calls ; then
+		../gatk-4.0.11.0/gatk GermlineCNVCaller --run-mode COHORT --contig-ploidy-calls gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/ploidy_model_${PARTITION}-calls -L gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/intervals.bed --interval-merging-rule OVERLAPPING_ONLY -I gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/hdf5_files_${PARTITION}.list --output gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls --output-prefix cnv_calls_${PARTITION} >gatk_gcnv/${PANEL}_${GENDER}_${BIN}_$LIMIT/cnv_calls/GermlineCNVCaller_${PARTITION}.log 2>&1
+	fi
+done

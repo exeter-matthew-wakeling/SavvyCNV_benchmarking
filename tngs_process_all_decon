@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for BIN in 150000 200000 250000 300000 ; do
+	for TRANS in 0.1 0.03 0.01 0.001 0.0001 0.00001 0.000001 0.0000001 0.00000001 0.000000001 0.0000000001 ; do
+		for MIN in 20 25 30 35 40 45 50 ; do
+			cat out_new_tngsv5*_${BIN}_${TRANS}_${MIN}_calls_all.txt | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v503\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE[^\t]*//;s/_MALE[^\t]*//;s/_UNKNOWN//" >decon/results_${BIN}_${TRANS}_${MIN}
+			cat decon/results_${BIN}_${TRANS}_${MIN} | grep -f tested_samples_grep_pattern2 | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth.txt -decon -optimise 8 -optimise 13 -optimise 0 | sed -e "s/$/\t${BIN}\t${TRANS}\t${MIN}/" >decon/analyse_${BIN}_${TRANS}_${MIN}
+			cat decon/results_${BIN}_${TRANS}_${MIN} | grep -f tested_samples_grep_pattern2 | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth_large.txt -decon -optimise 8 -optimise 13 -optimise 0 | sed -e "s/$/\t${BIN}\t${TRANS}\t${MIN}/" >decon/large_analyse_${BIN}_${TRANS}_${MIN}
+			cat decon/results_${BIN}_${TRANS}_${MIN} | grep -f tested_samples_grep_pattern2 | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth_xlarge.txt -decon -optimise 8 -optimise 13 -optimise 0 | sed -e "s/$/\t${BIN}\t${TRANS}\t${MIN}/" >decon/xlarge_analyse_${BIN}_${TRANS}_${MIN}
+		done
+	done
+done
+

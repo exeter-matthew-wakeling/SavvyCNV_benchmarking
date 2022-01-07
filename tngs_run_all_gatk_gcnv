@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for BIN in 150000 200000 250000 300000 ; do
+	for LIMIT in 30 ; do
+		for PANEL in v5 v501 v503 ; do
+			for GENDER in male female ; do
+				./tngs_do_gatk_gcnv $PANEL $GENDER $BIN $LIMIT
+			done
+		done
+	done
+done

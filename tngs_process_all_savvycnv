@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for i in savvycnv/results_* ; do
+	o=`basename $i | tr "_" "\t"`
+	p=`echo $i | sed -e "s/results_/analyse_/"`
+	q=`echo $i | sed -e "s/results_/large_analyse_/"`
+	r=`echo $i | sed -e "s/results_/xlarge_analyse_/"`
+	grep -f tested_samples_grep_pattern <$i | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth.txt -optimise 7 -optimise 8 -optimise 5 | sed -e "s/$/\t$o/" >$p
+	grep -f tested_samples_grep_pattern <$i | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth_large.txt -optimise 7 -optimise 8 -optimise 5 | sed -e "s/$/\t$o/" >$q
+	grep -f tested_samples_grep_pattern <$i | java -Xmx10g AnalyseCnvs /dev/stdin -truth tngs_truth_xlarge.txt -optimise 7 -optimise 8 -optimise 5 | sed -e "s/$/\t$o/" >$r
+done

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for i in excavator2/results_*_gather ; do
+	o=`basename $i | tr "_" "\t"`
+	p=`echo $i | sed -e "s/results_/analyse_/;s/_gather//"`
+	l=`echo $i | sed -e "s/results_/large_analyse_/;s/_gather//"`
+	x=`echo $i | sed -e "s/results_/xlarge_analyse_/;s/_gather//"`
+	java AnalyseCnvs $i -truth tngs_truth.txt -excavator2 -optimise 9 -optimise 0 | sed -e "s/$/\t$o/" >$p
+	java AnalyseCnvs $i -truth tngs_truth_large.txt -excavator2 -optimise 9 -optimise 0 | sed -e "s/$/\t$o/" >$l
+	java AnalyseCnvs $i -truth tngs_truth_xlarge.txt -excavator2 -optimise 9 -optimise 0 | sed -e "s/$/\t$o/" >$x
+done

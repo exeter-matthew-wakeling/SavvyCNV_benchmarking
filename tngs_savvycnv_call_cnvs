@@ -1,0 +1,13 @@
+#!/bin/bash
+
+BIN=$1
+TRANS=$2
+MIN=$3
+
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v5/female/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v501\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v5/male/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v501\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v501/female/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v501\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v501/male/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v501\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v503/female/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v503\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+java -Xmx10g SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v503/male/*.coverageBinner | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//;s/v5\///;s/v503\///;s/female\///;s/male\///;s/\.realigned//;s/\.sorted//;s/\.merged//;s/_FEMALE.*//;s/_MALE.*//;s/_UNKNOWN//"
+

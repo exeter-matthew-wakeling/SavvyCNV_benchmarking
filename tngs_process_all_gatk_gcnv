@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for BIN in 150000 200000 250000 300000 ; do
+	(for i in gatk_gcnv/*_male_${BIN}_30/cnv_calls/cnv_calls_*-calls ; do java ProcessGatkGcnvResults $i male ; done ; for i in gatk_gcnv/*_female_${BIN}_30/cnv_calls/cnv_calls_*-calls ; do java ProcessGatkGcnvResults $i female ; done) | sed -f translationTable | grep -f tested_samples_grep_pattern >gatk_gcnv/results_${BIN}_30
+	java -Xmx10g AnalyseCnvs gatk_gcnv/results_${BIN}_30 -truth tngs_truth.txt -optimise 5 -optimise 8 -optimise 6 | sed -e "s/$/\t${BIN}\t30/" >gatk_gcnv/analyse_${BIN}_30
+	java -Xmx10g AnalyseCnvs gatk_gcnv/results_${BIN}_30 -truth tngs_truth_large.txt -optimise 5 -optimise 8 -optimise 6 | sed -e "s/$/\t${BIN}\t30/" >gatk_gcnv/large_analyse_${BIN}_30
+	java -Xmx10g AnalyseCnvs gatk_gcnv/results_${BIN}_30 -truth tngs_truth_xlarge.txt -optimise 5 -optimise 8 -optimise 6 | sed -e "s/$/\t${BIN}\t30/" >gatk_gcnv/xlarge_analyse_${BIN}_30
+done

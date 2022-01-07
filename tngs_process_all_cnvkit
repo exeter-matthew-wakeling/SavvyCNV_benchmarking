@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for BIN in 150000 200000 250000 300000 400000 500000 700000 1000000 1500000 2000000 3000000 4000000 ; do
+	grep -v "chromosome\|^Y" tngs*_$BIN/results/* | sed -e "s/^.*\///;s/\.results:/\t/;s/\.realigned//;s/\.sorted//;s/\/merged//;s/_FEMALE[^\t]*//;s/_MALE[^\t]*//;s/_UNKNOWN[^\t]*//;s/^/\t/" | grep -f tested_samples_grep_pattern2 | sed -e "s/^\t//" >cnvkit/results_$BIN
+	java -Xmx10g AnalyseCnvs cnvkit/results_$BIN -truth tngs_truth.txt -cnvkit -optimise 9 -optimise 10 -optimise 0 | sed -e "s/$/\t$BIN/" >cnvkit/analyse_$BIN
+	java -Xmx10g AnalyseCnvs cnvkit/results_$BIN -truth tngs_truth_large.txt -cnvkit -optimise 9 -optimise 10 -optimise 0 | sed -e "s/$/\t$BIN/" >cnvkit/large_analyse_$BIN
+	java -Xmx10g AnalyseCnvs cnvkit/results_$BIN -truth tngs_truth_xlarge.txt -cnvkit -optimise 9 -optimise 10 -optimise 0 | sed -e "s/$/\t$BIN/" >cnvkit/xlarge_analyse_$BIN
+done

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for i in 150000 200000 250000 300000 ; do
+        grep -v "^Chromosome" results_${i}/*/Results/Results/*/FastCallResults_* | sed -e "s/^.*FastCallResults_\(.*\)\.txt:/\1\t/" >results_${i}_gather
+done
+

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for i in 150000 200000 250000 300000 400000 500000 700000 1000000 1500000 2000000 3000000 4000000 ; do
+	./tngs_do_cnvkit_v5_female $i >tngsv5_new_female_${i}.log 2>&1
+	./tngs_do_cnvkit_v5_male $i >tngsv5_new_male_${i}.log 2>&1
+	./tngs_do_cnvkit_v501_female $i >tngsv501_new_female_${i}.log 2>&1
+	./tngs_do_cnvkit_v501_male $i >tngsv501_new_male_${i}.log 2>&1
+	./tngs_do_cnvkit_v503_female $i >tngsv503_new_female_${i}.log 2>&1
+	./tngs_do_cnvkit_v503_male $i >tngsv503_new_male_${i}.log 2>&1
+done
+

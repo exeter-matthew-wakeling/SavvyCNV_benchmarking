@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for BIN in 150000 200000 250000 300000 ; do
+	for MIN in 20 25 30 35 40 45 50 ; do
+		for PANEL in v5_female v5_male v501_female v501_male v503_female v503_male ; do
+			if ! test -e out_new_tngs${PANEL}_${BIN}_0.1_${MIN}_calls_all.txt ; then
+				./tngs_do_decon $BIN $MIN $PANEL
+			fi
+		done
+	done
+done
+
+

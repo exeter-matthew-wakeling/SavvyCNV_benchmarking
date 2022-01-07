@@ -1,0 +1,73 @@
+#!/bin/bash
+
+BIN=$1
+
+if ! test -e tngsv503_male_$BIN ; then
+	mkdir tngsv503_male_$BIN
+fi
+
+if ! test -e tngsv503_male_$BIN/targets.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py target /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503_all_variant_calling_sorted.bed --split -o tngsv503_male_$BIN/targets.bed
+fi
+if ! test -e tngsv503_male_$BIN/access.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py access /mnt/Data1/resources/human_g1k_v37.fasta -o tngsv503_male_$BIN/access.bed
+fi
+if ! test -e tngsv503_male_$BIN/antitargets.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py antitarget tngsv503_male_$BIN/targets.bed -g tngsv503_male_$BIN/access.bed -a $BIN -o tngsv503_male_$BIN/antitargets.bed
+fi
+
+if ! test -e tngsv503_male_$BIN/targets ; then
+	mkdir tngsv503_male_$BIN/targets
+	mkdir tngsv503_male_$BIN/antitargets
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py coverage $BAM tngsv503_male_$BIN/targets.bed -o tngsv503_male_$BIN/targets/${OUT}.cnn &
+	done
+	wait
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py coverage $BAM tngsv503_male_$BIN/antitargets.bed -o tngsv503_male_$BIN/antitargets/${OUT}.cnn &
+	done
+	wait
+fi
+
+if ! test -e tngsv503_male_$BIN/reference.cnn ; then
+	qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py reference -g male tngsv503_male_$BIN/targets/*.cnn tngsv503_male_$BIN/antitargets/*.cnn -f /mnt/Data1/resources/human_g1k_v37.fasta -o tngsv503_male_$BIN/reference.cnn
+fi
+
+if ! test -e tngsv503_male_$BIN/fix ; then
+	mkdir tngsv503_male_$BIN/fix
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py fix tngsv503_male_$BIN/targets/${OUT}.cnn tngsv503_male_$BIN/antitargets/${OUT}.cnn tngsv503_male_$BIN/reference.cnn -o tngsv503_male_$BIN/fix/${OUT}.fix.cnr &
+	done
+	wait
+fi
+
+if ! test -e tngsv503_male_$BIN/segment ; then
+	mkdir tngsv503_male_$BIN/segment
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py segment -m haar tngsv503_male_$BIN/fix/${OUT}.fix.cnr -o tngsv503_male_$BIN/segment/${OUT}.cns &
+	done
+	wait
+fi
+
+if ! test -e tngsv503_male_$BIN/call ; then
+	mkdir tngsv503_male_$BIN/call
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py call -g male tngsv503_male_$BIN/segment/${OUT}.cns -o tngsv503_male_$BIN/call/${OUT}.cns &
+	done
+	wait
+fi
+
+if ! test -e tngsv503_male_$BIN/results ; then
+	mkdir tngsv503_male_$BIN/results
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/genomes/v503/male/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		grep "^chromosome\|^[1-9].*	[^2]	[0-9.]*	[0-9]*	[0-9.]*$\|^X.*	[^1]	[0-9.]*	[0-9]*	[0-9.]*$" <tngsv503_male_$BIN/call/${OUT}.cns >tngsv503_male_$BIN/results/${OUT}.results
+	done
+fi
+
+
