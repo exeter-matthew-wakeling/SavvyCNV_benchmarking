@@ -1,0 +1,43 @@
+#!/bin/bash
+
+module load R-bundle-Bioconductor/3.7-foss-2018b-R-3.5.1
+
+SAMPLE=$1
+BAM=$2
+
+mkdir analysis/$SAMPLE
+mkdir analysis/$SAMPLE/sample
+ln -s `readlink -f $BAM` analysis/$SAMPLE/sample/
+ln -s `readlink -f ${BAM}.bai` analysis/$SAMPLE/sample/
+
+for BIN in 50 100 200 500 1000 2000 ; do
+
+	mkdir analysis/$SAMPLE/analysis_${BIN}
+
+	(
+	echo '#!/gpfs/ts0/shared/software/R/3.5.1-foss-2018b/bin/Rscript'
+	echo 'options(width=1000)'
+	echo 'library(CopywriteR)'
+	echo "data.folder <- tools::file_path_as_absolute(file.path(getwd(), \"analysis_${BIN}\"))"
+	echo "preCopywriteR(output.folder = file.path(data.folder), bin.size = ${BIN}000, ref.genome = \"hg19\")"
+	echo "load(file = file.path(data.folder, \"hg19_${BIN}kb\", \"blacklist.rda\"))"
+	echo "load(file = file.path(data.folder, \"hg19_${BIN}kb\", \"GC_mappability.rda\"))"
+	echo 'bp.param <- SnowParam(workers = 1, type = "SOCK")'
+	echo 'path <- tools::file_path_as_absolute(file.path(getwd(), "sample"))'
+	echo 'samples <- list.files(path = path, pattern=".bam$", full.names = TRUE)'
+	echo 'controls <- samples'
+	echo 'sample.control <- data.frame(samples, controls)'
+	echo "CopywriteR(sample.control = sample.control, destination.folder = file.path(data.folder), reference.folder = file.path(data.folder, \"hg19_${BIN}kb\"), bp.param = bp.param)"
+	echo 'plotCNA(destination.folder = file.path(data.folder))'
+	echo 'load(file = file.path(data.folder, "CNAprofiles", "segment.Rdata"))'
+	echo 'segment.CNA.object'
+	) > analysis/$SAMPLE/do_${BIN}
+
+	chmod +x analysis/$SAMPLE/do_${BIN}
+
+	(
+	cd analysis/$SAMPLE
+	./do_${BIN} | tee results_${BIN}
+	)
+
+done
