@@ -1,0 +1,73 @@
+#!/bin/bash
+
+BIN=$1
+
+if ! test -e exome_v5_female_$BIN ; then
+	mkdir exome_v5_female_$BIN
+fi
+
+if ! test -e exome_v5_female_$BIN/targets.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py target /mnt/Data2/exome_sequencing/resources/v5/variantcall.bed --split -o exome_v5_female_$BIN/targets.bed
+fi
+if ! test -e exome_v5_female_$BIN/access.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py access /mnt/Data1/resources/human_g1k_v37.fasta -o exome_v5_female_$BIN/access.bed
+fi
+if ! test -e exome_v5_female_$BIN/antitargets.bed ; then
+	qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py antitarget exome_v5_female_$BIN/targets.bed -g exome_v5_female_$BIN/access.bed -a $BIN -o exome_v5_female_$BIN/antitargets.bed
+fi
+
+if ! test -e exome_v5_female_$BIN/targets ; then
+	mkdir exome_v5_female_$BIN/targets
+	mkdir exome_v5_female_$BIN/antitargets
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py coverage $BAM exome_v5_female_$BIN/targets.bed -o exome_v5_female_$BIN/targets/${OUT}.cnn &
+	done
+	wait
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py coverage $BAM exome_v5_female_$BIN/antitargets.bed -o exome_v5_female_$BIN/antitargets/${OUT}.cnn &
+	done
+	wait
+fi
+
+if ! test -e exome_v5_female_$BIN/reference.cnn ; then
+	qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py reference -g female exome_v5_female_$BIN/targets/*.cnn exome_v5_female_$BIN/antitargets/*.cnn -f /mnt/Data1/resources/human_g1k_v37.fasta -o exome_v5_female_$BIN/reference.cnn
+fi
+
+if ! test -e exome_v5_female_$BIN/fix ; then
+	mkdir exome_v5_female_$BIN/fix
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py fix exome_v5_female_$BIN/targets/${OUT}.cnn exome_v5_female_$BIN/antitargets/${OUT}.cnn exome_v5_female_$BIN/reference.cnn -o exome_v5_female_$BIN/fix/${OUT}.fix.cnr &
+	done
+	wait
+fi
+
+if ! test -e exome_v5_female_$BIN/segment ; then
+	mkdir exome_v5_female_$BIN/segment
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=2 P=2 G=cnvkit" cnvkit.py segment -m haar exome_v5_female_$BIN/fix/${OUT}.fix.cnr -o exome_v5_female_$BIN/segment/${OUT}.cns &
+	done
+	wait
+fi
+
+if ! test -e exome_v5_female_$BIN/call ; then
+	mkdir exome_v5_female_$BIN/call
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		qrun "R=2 C=1 P=2 G=cnvkit" cnvkit.py call -g female exome_v5_female_$BIN/segment/${OUT}.cns -o exome_v5_female_$BIN/call/${OUT}.cns &
+	done
+	wait
+fi
+
+if ! test -e exome_v5_female_$BIN/results ; then
+	mkdir exome_v5_female_$BIN/results
+	for BAM in /mnt/Data6/mw501/papers/2017_1_off_target_reads/exomes/v5/female/*.bam ; do
+		OUT=`echo $BAM | sed -e "s/^.*\///;s/\.bam$//"`
+		grep "^chromosome\|^[1-9X].*	[^2]	[0-9.]*	[0-9]*	[0-9.]*$" <exome_v5_female_$BIN/call/${OUT}.cns >exome_v5_female_$BIN/results/${OUT}.results
+	done
+fi
+
+

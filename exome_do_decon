@@ -1,0 +1,12 @@
+#!/bin/bash
+
+BIN=$1
+MIN=$2
+PANEL=$3
+
+/usr/share/r/R-3.1.3/bin/Rscript ReadInBams.R --bams exome_${PANEL}.bams --bed savvycnv_intervals/intervals_${PANEL}_${BIN}_${MIN} --fasta /mnt/Data1/resources/human_g1k_v37.fasta --out out_exome_${PANEL}_${BIN}_${MIN} >out_exome_${PANEL}_${BIN}_${MIN}.log 2>&1
+
+for TRANS in 0.3 0.1 0.03 0.01 0.001 0.0001 0.00001 0.000001 0.0000001 0.00000001 0.000000001 0.0000000001 ; do
+	/usr/share/r/R-3.1.3/bin/Rscript makeCNVcalls.R --Rdata out_exome_${PANEL}_${BIN}_${MIN}.RData --transProb $TRANS --out out_exome_${PANEL}_${BIN}_${TRANS}_${MIN}_calls --plot None >out_exome_${PANEL}_${BIN}_${TRANS}_${MIN}_calls.log 2>&1
+done
+

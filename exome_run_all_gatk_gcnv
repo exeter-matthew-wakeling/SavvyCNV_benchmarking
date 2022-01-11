@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for BIN in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	for LIMIT in 30 ; do
+		for PANEL in v1 v3 v4 v5 ; do
+			for GENDER in male female ; do
+				./exome_do_gatk_gcnv $PANEL $GENDER $BIN $LIMIT
+			done
+		done
+	done
+done

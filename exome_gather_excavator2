@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for i in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	grep -v "^Chromosome" excavator2/results_${i}/*/Results/Results/*/FastCallResults_* | sed -e "s/^.*FastCallResults_\(WG.*\)\.txt:/\1\t/" >excavator2/results_${i}_gather
+done

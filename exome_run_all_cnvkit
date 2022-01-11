@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for i in 10000 12000 15000 20000 25000 30000 40000 50000 70000 100000 150000 200000 300000 500000 ; do
+	./exome_do_cnvkit_v1_male $i >exome_v1_male_${i}.log 2>&1 &
+	./exome_do_cnvkit_v1_female $i >exome_v1_female_${i}.log 2>&1 &
+	./exome_do_cnvkit_v3_male $i >exome_v3_male_${i}.log 2>&1 &
+	./exome_do_cnvkit_v3_female $i >exome_v3_female_${i}.log 2>&1 &
+	./exome_do_cnvkit_v4_male $i >exome_v4_male_${i}.log 2>&1 &
+	./exome_do_cnvkit_v4_female $i >exome_v4_female_${i}.log 2>&1 &
+	./exome_do_cnvkit_v5_male $i >exome_v5_male_${i}.log 2>&1 &
+	./exome_do_cnvkit_v5_female $i >exome_v5_female_${i}.log 2>&1 &
+	wait
+done

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for BIN in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	for MIN in 20 25 30 35 40 45 50 ; do
+		for PANEL in v1_female v1_male v3_female v3_male v4_female v4_male v5_female v5_male ; do
+			if ! test -e out_exome_${PANEL}_${BIN}_0.1_${MIN}_calls_all.txt ; then
+				./exome_do_decon $BIN $MIN $PANEL &
+			fi
+		done
+	done
+done
+
+

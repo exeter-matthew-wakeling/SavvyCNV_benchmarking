@@ -1,0 +1,15 @@
+#!/bin/bash
+
+BIN=$1
+TRANS=$2
+MIN=$3
+
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v1/female/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v1/male/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v3/female/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v3/male/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v4/female/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v4/male/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v5/female/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+java SavvyCNV -d $BIN -trans $TRANS -minReads $MIN v5/male/*.coverageBinner | grep "WG0" | sed -e "s/\.\.\/v.\/.*male\///;s/\.coverageBinner//"
+
