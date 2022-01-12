@@ -26,6 +26,16 @@ If optimisation options are supplied, then multiple rows will be output as many 
 2. The lowest possible number of calls in the input file that pass the filters and do not overlap with a true CNV or a common CNV.
 3. Multiple columns, giving the values of the chosen filters.
 
+## CalculatePrecisionRecallCurve
+
+Calculates the best precision-recall curve that can be constructed from a set of separate tests. The input is read from the standard input, and is expected to be tab-separated lines. Each line is a separate test. The number of true positive detections and false positives are read from the line. The software takes the following arguments:
+1. The first argument is the column number of the true positives.
+2. The second argument is the column number of the false positives.
+3. The third argument is total number of condition positives (true positives plus false negatives).
+4. The fourth argument is optional - if it is not present then the software will emit just the input lines that are on the best precision-recall curve. If the fourth argument is present, then we recommend a value of 1, and the software will interpolate lines between these points. The lines will be curved on a precision-recall graph, but would be straight lines on a ROC curve (but a ROC curve cannot be created without having a well-defined number of true negatives).
+
+The output is a set of tab-separated lines where the first column is the precision and the second column is the recall. Lines that represent an actual input test will have the whole input line appended after these two columns.
+
 ## ConvertCopywriterResults
 
 This software converts the results produced by CopywriteR for multiple samples into the result expected by AnalyseCnvs (described above). The software extracts the CNVs from the results, converts chromosomes "23" and "24" into "X" and "Y", and adjusts the expected dosage for male samples. The software takes a single argument, which is the bin size, which is used to find the CopywriteR results. The output is written to the stdout. The CopywriteR output is expected to be in the directory "analysis", containing one directory for each sample, named as the sample name. Each sample directory should have a file called "results_<bin size>" which is processed. The software reads a text file called "male_samples" which is a list of sample names that are male samples, and should have the X chromosome dosage adjusted.
