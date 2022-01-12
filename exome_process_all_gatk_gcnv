@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for BIN in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	(for i in gatk_gcnv/*_male_${BIN}_30/cnv_calls/cnv_calls_*-calls ; do java -cp /gpfs/ts0/home/mw501/Research_Project-MRC147594/software/in-house/software/java ProcessGatkGcnvResults $i male ; done ; for i in gatk_gcnv/*_female_${BIN}_30/cnv_calls/cnv_calls_*-calls ; do java -cp /gpfs/ts0/home/mw501/Research_Project-MRC147594/software/in-house/software/java ProcessGatkGcnvResults $i female ; done) | sed -f translationTable | grep WG >gatk_gcnv/results_${BIN}_30
+	java -Xmx10g AnalyseCnvs gatk_gcnv/results_${BIN}_30 -truth exome_truth.csv -optimise 5 -optimise 8 -optimise 6 | sed -e "s/$/\t${BIN}\t30/" >gatk_gcnv/analyse_${BIN}_30
+	java -Xmx10g AnalyseCnvs gatk_gcnv/results_${BIN}_30 -truth exome_truth_large.csv -optimise 5 -optimise 8 -optimise 6 | sed -e "s/$/\t${BIN}\t30/" >gatk_gcnv/large_analyse_${BIN}_30
+done

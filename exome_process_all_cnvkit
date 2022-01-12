@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for BIN in 10000 12000 15000 20000 25000 30000 40000 50000 70000 100000 150000 200000 300000 500000 ; do
+	grep -v "chromosome" /mnt/Data5/exome_sequencing/average_depth/cnvkit/exome_*_$BIN/results/WG0* | sed -e "s/^.*\///;s/\.results:/\t/" >cnvkit/results_$BIN
+	java AnalyseCnvs cnvkit/results_$BIN -truth exome_truth.csv -cnvkit -optimise 9 -optimise 10 -optimise 0 | sed -e "s/$/\t$BIN/" >cnvkit/analyse_$BIN
+	java AnalyseCnvs cnvkit/results_$BIN -truth exome_truth_large.csv -cnvkit -optimise 9 -optimise 10 -optimise 0 | sed -e "s/$/\t$BIN/" >cnvkit/large_analyse_$BIN
+done

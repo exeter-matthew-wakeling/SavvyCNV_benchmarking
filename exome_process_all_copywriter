@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for BIN in 20 35 50 100 200 500 1000 2000 ; do
+	awk '{ if ($9 > 0.3) print }' <copywriter/results_$BIN | java -Xmx10g AnalyseCnvs /dev/stdin -truth exome_truth.csv -copywriter -optimise 6 -optimise 9 -optimise 10 | sed -e "s/$/\t$BIN/" >copywriter/analyse_$BIN
+	awk '{ if ($9 > 0.3) print }' <copywriter/results_$BIN | java -Xmx10g AnalyseCnvs /dev/stdin -truth exome_truth_large.csv -copywriter -optimise 6 -optimise 9 -optimise 10 | sed -e "s/$/\t$BIN/" >copywriter/large_analyse_$BIN
+done

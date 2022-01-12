@@ -1,0 +1,9 @@
+#!/bin/bash
+
+for i in savvycnv/results_* ; do
+	o=`basename $i | tr "_" "\t"`
+	p=`echo $i | sed -e "s/results_/analyse_/"`
+	q=`echo $i | sed -e "s/results_/large_analyse_/"`
+	java AnalyseCnvs $i -truth exome_truth.csv -optimise 7 -optimise 8 -optimise 5 | sed -e "s/$/\t$o/" >$p
+	java AnalyseCnvs $i -truth exome_truth_large.csv -optimise 7 -optimise 8 -optimise 5 | sed -e "s/$/\t$o/" >$q
+done

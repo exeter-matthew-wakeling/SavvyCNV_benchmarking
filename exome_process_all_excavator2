@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for i in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	grep -v "^Chromosome" excavator2/results_${i}/*/Results/Results/*/FastCallResults_* | sed -e "s/^.*FastCallResults_\(WG.*\)\.txt:/\1\t/" >excavator2/results_${i}
+	java AnalyseCnvs excavator2/results_${i}_gather -truth exome_truth.csv -excavator2 -optimise 9 -optimise 0 | sed -e "s/$/\t$i/" >excavator2/analyse_${i}
+	java AnalyseCnvs excavator2/results_${i}_gather -truth exome_truth_large.csv -excavator2 -optimise 9 -optimise 0 | sed -e "s/$/\t$i/" >excavator2/large_analyse_${i}
+done

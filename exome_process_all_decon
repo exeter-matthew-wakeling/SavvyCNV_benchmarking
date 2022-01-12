@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for BIN in 10000 12000 15000 20000 25000 30000 40000 50000 ; do
+	for MIN in 20 25 30 35 40 45 50 ; do
+		for TRANS in 0.3 0.1 0.03 0.01 0.001 0.0001 0.00001 0.000001 0.0000001 0.00000001 0.000000001 0.0000000001 ; do
+			cat out_exome_v*_${BIN}_${TRANS}_${MIN}_calls_all.txt | grep "WG0" | grep -v "Y:\|GL" >decon/results_${BIN}_${TRANS}_${MIN}
+			java AnalyseCnvs decon/results_${BIN}_${TRANS}_${MIN} -truth exome_truth.csv -decon -optimise 8 -optimise 13 -optimise 0 | sed -e "s/$/\t${BIN}\t${TRANS}\t${MIN}/" >decon/analyse_${BIN}_${TRANS}_${MIN}
+			java AnalyseCnvs decon/results_${BIN}_${TRANS}_${MIN} -truth exome_truth_large.csv -decon -optimise 8 -optimise 13 -optimise 0 | sed -e "s/$/\t${BIN}\t${TRANS}\t${MIN}/" >decon/large_analyse_${BIN}_${TRANS}_${MIN}
+		done
+	done
+done
